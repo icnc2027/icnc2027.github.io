@@ -6,7 +6,7 @@ Edit page text in _src/content/<slug>.html (HTML fragments), the shared
 frame in _src/template.html, and the page list / navigation below.
 No third-party packages are needed.
 """
-import os, re, datetime, html
+import os, re, datetime, html, hashlib
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC  = os.path.join(ROOT, "_src")
 SITE_URL = "https://icnc2027.com"
@@ -69,8 +69,16 @@ def nav_html(current):
       out.append(f'<li class="has-sub"><button type="button" aria-expanded="false">{label}</button><ul class="sub">{subs}</ul></li>')
   return "\n        ".join(out)
 
+def vhash(rel):
+  try:
+    return hashlib.md5(open(os.path.join(ROOT, rel), "rb").read()).hexdigest()[:8]
+  except OSError:
+    return "0"
+
 def build():
   tpl = open(os.path.join(SRC, "template.html"), encoding="utf-8").read()
+  for rel in ("assets/css/style.css", "assets/js/main.js", "assets/js/hero-scene.js"):
+    tpl = tpl.replace(rel + '"', rel + "?v=" + vhash(rel) + '"')
   year = datetime.date.today().year
   for slug, (title, desc, group) in PAGES.items():
     body = open(os.path.join(SRC, "content", slug + ".html"), encoding="utf-8").read()
