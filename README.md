@@ -42,6 +42,16 @@ are confirmed. `docs/CONTENT_TODO.md` lists everything currently marked.
 4. Repository **Settings → Pages**: Source = *Deploy from a branch*, branch `main`, folder `/ (root)`. The site is now live at `https://icnc2027.github.io/`.
 5. Follow `docs/DNS_SWITCH.md` to point icnc2027.com at it and turn on HTTPS.
 
+## The animated home-page scene
+
+`assets/js/hero-scene.js` draws the hero landscape on a canvas and lights it according to the real time in Banff
+(sun elevation computed for the Banff Centre's latitude and the current date), with wind in the trees, a rippling
+reflection, drifting clouds, alpenglow at sunrise/sunset, stars, the moon at its current phase and a faint aurora at night.
+The SVG in `index.html` is the fallback when JavaScript is off; visitors who prefer reduced motion get a still frame.
+
+Preview any moment by adding parameters to the URL:
+`index.html?d=2027-06-02&t=21.7` (2 June 2027 at 21:42 Banff time), `?t=13` (today at 13:00), `?cycle` (a whole day in one minute).
+
 ## Checks before announcing
 
 - Replace all `tentative` / `to be announced` items (see `docs/CONTENT_TODO.md`).

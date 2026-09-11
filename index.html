@@ -40,6 +40,7 @@
 <main id="main">
 
 <section class="hero">
+  <canvas id="hero-canvas" class="hero-canvas" aria-hidden="true"></canvas>
   <svg class="hero-art" viewBox="0 0 1600 700" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">
   <defs>
     <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0E2540"/><stop offset=".55" stop-color="#2E5C82"/><stop offset="1" stop-color="#E8C4A4"/></linearGradient>
@@ -75,6 +76,7 @@
     </div>
     <p class="hero-note">Abstract submission and registration dates will be announced here.</p>
   </div>
+  <p class="hero-clock" id="hero-clock" aria-live="off"></p>
 </section>
 
 <section class="dates-strip">
@@ -203,5 +205,6 @@
   </div>
 </footer>
 <script src="assets/js/main.js"></script>
+<script src="assets/js/hero-scene.js" defer></script>
 </body>
 </html>

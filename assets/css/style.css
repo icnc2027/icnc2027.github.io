@@ -67,6 +67,9 @@ hr{border:0;border-top:1px solid var(--rule);margin:2.5rem 0}
 /* ---- hero --------------------------------------------------------- */
 .hero{position:relative;color:#fff;overflow:hidden;background:var(--navy-deep)}
 .hero-art{position:absolute;inset:0;width:100%;height:100%;display:block}
+.hero-canvas{position:absolute;inset:0;width:100%;height:100%;display:block;opacity:0;transition:opacity .6s ease}
+.hero-clock{position:absolute;right:1.25rem;bottom:.8rem;margin:0;font-size:.78rem;letter-spacing:.02em;color:rgba(255,255,255,.62);font-variant-numeric:tabular-nums}
+.hero-clock:empty{display:none}
 .hero-inner{position:relative;padding:clamp(3rem,9vw,7.5rem) 0 clamp(4rem,9vw,7rem)}
 .hero-kicker{font-size:1.05rem;letter-spacing:.01em;margin:0 0 .6rem;color:rgba(255,255,255,.88)}
 .hero h1{color:#fff;font-size:clamp(3.2rem,9vw,6.5rem);font-weight:700;line-height:.95;margin:0 0 .35em;letter-spacing:-.02em}
