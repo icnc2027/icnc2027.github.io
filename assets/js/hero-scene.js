@@ -99,38 +99,35 @@
     return { z: mix(hex(a[1]), hex(b[1]), t), u: mix(hex(a[2]), hex(b[2]), t), l: mix(hex(a[3]), hex(b[3]), t), h: mix(hex(a[4]), hex(b[4]), t) };
   }
 
-  // ---------- geometry ----------
-  // ridges: irregular profiles (more vertices = less "cut-out" look); haze = atmospheric blend toward sky
+  // ---------- geometry (original flat-polygon ridges) ----------
   var RIDGES = [
-    { pts: [[0,470],[45,452],[95,430],[140,438],[190,392],[235,372],[270,384],[310,362],[352,330],[386,318],[410,336],[455,352],[500,372],[535,362],[575,343],[610,352],[645,326],[690,346],[735,366],[770,352],[815,336],[850,352],[895,330],[940,306],[985,292],[1020,300],[1060,286],[1095,296],[1130,328],[1170,352],[1215,366],[1260,342],[1300,322],[1340,332],[1385,310],[1420,326],[1465,352],[1510,346],[1550,362],[1600,340]],
-      day: '#93A9BD', night: '#1A2C44', haze: 0.55, snowLine: 372 },
-    { pts: [[0,506],[40,486],[85,462],[125,430],[160,404],[195,392],[228,404],[262,420],[300,392],[336,362],[370,340],[405,318],[430,306],[452,296],[478,310],[505,332],[540,352],[575,376],[612,398],[650,382],[690,370],[725,392],[765,416],[805,432],[845,412],[880,388],[915,362],[950,338],[985,320],[1020,308],[1045,318],[1075,336],[1110,352],[1150,376],[1195,404],[1235,392],[1275,372],[1315,358],[1345,366],[1380,382],[1420,398],[1460,416],[1510,428],[1560,410],[1600,392]],
-      day: '#5E7F97', night: '#15283F', haze: 0.28, snowLine: 340 },
-    { pts: [[0,536],[60,522],[120,528],[175,514],[235,506],[290,514],[340,502],[395,492],[445,500],[500,512],[560,520],[620,508],[680,498],[740,504],[800,514],[860,506],[915,494],[975,486],[1040,494],[1110,508],[1180,518],[1250,510],[1320,500],[1390,494],[1460,502],[1530,512],[1600,506]],
-      day: '#2E4D66', night: '#0F2034', haze: 0.08, snowLine: 0 }
+    { pts: [[0,500],[120,380],[240,445],[380,310],[500,405],[630,335],[770,420],[900,345],[1080,285],[1200,400],[1370,320],[1490,385],[1600,340]], day: '#9EB6C8', night: '#1B2D45' },
+    { pts: [[0,470],[160,355],[290,420],[450,300],[570,400],[700,350],[860,450],[1020,320],[1150,405],[1290,355],[1430,430],[1600,380]], day: '#56788F', night: '#162A40' },
+    { pts: [[0,520],[130,470],[260,525],[390,475],[550,540],[700,480],[850,530],[1010,470],[1220,545],[1380,485],[1600,540]], day: '#22425C', night: '#0F2034' }
   ];
-  // precompute peaks (local maxima above snow line) for snow caps
-  RIDGES.forEach(function (r) {
-    r.peaks = [];
-    for (var i = 1; i < r.pts.length - 1; i++) {
-      var p = r.pts[i];
-      if (p[1] < r.pts[i - 1][1] && p[1] < r.pts[i + 1][1] && p[1] < r.snowLine) r.peaks.push(i);
+  var SNOW = [
+    [[450,300],[418,348],[433,340],[446,356],[462,340],[477,350],[486,340]],
+    [[1020,320],[992,362],[1005,356],[1017,370],[1032,355],[1046,364],[1054,353]],
+    [[160,355],[140,385],[152,380],[162,392],[175,381],[184,386]],
+    [[1080,285],[1056,318],[1068,313],[1080,326],[1094,314],[1104,320]],
+    [[380,310],[360,340],[372,336],[382,348],[394,337],[402,342]]
+  ];
+  var NEAR = RIDGES[2].pts;
+  function ridgeY(x) {                                   // height of the foreground ridge at x
+    for (var i = 0; i < NEAR.length - 1; i++) {
+      var a = NEAR[i], b = NEAR[i + 1];
+      if (x >= a[0] && x <= b[0]) return a[1] + (b[1] - a[1]) * (x - a[0]) / (b[0] - a[0]);
     }
-  });
+    return SHORE;
+  }
   var STARS = [], TREES = [], CLOUDS = [];
   (function init() {
     var i, x;
     for (i = 0; i < 220; i++) STARS.push({ x: rnd() * VW, y: rnd() * 400, r: 0.4 + rnd() * 1.2, p: rnd() * 6.28, s: 0.6 + rnd() * 0.4 });
-    // three rows of conifers: far (small, dark blue), mid, near (larger, at the corners a little taller)
-    var rows = [{ n: 1, base: SHORE - 10, hmin: 14, hmax: 26, step: 13 }, { n: 2, base: SHORE - 3, hmin: 22, hmax: 42, step: 15 }, { n: 3, base: SHORE + 2, hmin: 30, hmax: 58, step: 21 }];
-    rows.forEach(function (row) {
-      x = -20;
-      while (x < VW + 20) {
-        var edge = 1 + 0.5 * Math.max(0, 1 - Math.min(x, VW - x) / 260);          // taller at the edges of the frame
-        TREES.push({ x: x, h: (row.hmin + rnd() * (row.hmax - row.hmin)) * edge, w: 0.28 + rnd() * 0.1, p: rnd() * 6.28, row: row.n, base: row.base + (rnd() - 0.5) * 4 });
-        x += row.step + rnd() * row.step * 0.8;
-      }
-    });
+    var xx = -10;
+    while (xx < VW + 10) { TREES.push({ x: xx, h: 24 + rnd() * 26, w: 7 + rnd() * 5, p: rnd() * 6.28, row: 1 }); xx += 16 + rnd() * 7; }
+    xx = -10;
+    while (xx < VW + 10) { TREES.push({ x: xx, h: 16 + rnd() * 16, w: 5 + rnd() * 4, p: rnd() * 6.28, row: 0 }); xx += 22 + rnd() * 10; }
     for (i = 0; i < 4; i++) CLOUDS.push({ x: rnd() * VW, y: 40 + rnd() * 170, s: 0.55 + rnd() * 0.6, v: 0.3 + rnd() * 0.4, o: 0.4 + rnd() * 0.35, seed: rnd() * 100 });
   })();
   function wind(t) { return 0.45 + 0.3 * Math.sin(t * 0.17) * Math.sin(t * 0.053 + 1.3) + 0.12 * Math.sin(t * 0.61 + Math.sin(t * 0.23)); }
@@ -215,69 +212,34 @@
     }
   }
   function paintRidges(c, light, sun, sc) {
-    var glow = smooth(-6, 0, sun.elev) * smooth(11, 3, sun.elev);           // alpenglow window
-    var sunx = bodyPos(sun.H, sun.elev).x;
+    var glow = smooth(-5, 0, sun.elev) * smooth(12, 3, sun.elev);            // alpenglow around sunrise / sunset
     for (var i = 0; i < RIDGES.length; i++) {
-      var r = RIDGES[i];
-      var base = mix(hex(r.night), hex(r.day), light);
-      base = mix(base, hex('#D9866A'), glow * (0.42 - i * 0.1));
-      var hazeCol = mix(sc.h, sc.l, 0.4);
-      var col = mix(base, hazeCol, r.haze * (0.55 + 0.45 * light));          // atmospheric perspective
-      var pts = r.pts.slice(); pts.push([VW, SHORE + 6]); pts.push([0, SHORE + 6]);
-      // body: vertical gradient, lighter near the crest
-      var minY = 9999; r.pts.forEach(function (p) { if (p[1] < minY) minY = p[1]; });
-      var g = c.createLinearGradient(0, minY, 0, SHORE);
-      g.addColorStop(0, rgb(mix(col, hex('#FFFFFF'), 0.10 * light))); g.addColorStop(1, rgb(mix(col, hex('#0A1826'), 0.22)));
-      c.fillStyle = g; poly(c, pts); c.fill();
-      // facets: faces turned toward the sun are lighter, the others darker
-      for (var k = 0; k < r.pts.length - 1; k++) {
-        var p1 = r.pts[k], p2 = r.pts[k + 1];
-        var slopeDown = p2[1] > p1[1];                                          // going right, downhill
-        var faceX = (p1[0] + p2[0]) / 2, towardSun = (sunx > faceX) === slopeDown;
-        var strength = Math.abs(p2[1] - p1[1]) / 60;
-        var alpha = clamp(strength, 0.15, 1) * (towardSun ? 0.12 * light + 0.03 * glow : 0.14);
-        c.fillStyle = towardSun ? 'rgba(255,240,220,' + alpha.toFixed(3) + ')' : 'rgba(10,22,40,' + alpha.toFixed(3) + ')';
-        poly(c, [p1, p2, [p2[0], SHORE + 6], [p1[0], SHORE + 6]]); c.fill();
-      }
-      // snow caps on the peaks above the snow line
-      if (r.peaks.length) {
-        var snow = mix(mix(hex('#2A3F5C'), hex('#F5F7FA'), light), hex('#F6A98C'), glow * 0.9);
-        var snowShade = mix(snow, hex('#7F94B4'), 0.35);
-        for (var q = 0; q < r.peaks.length; q++) {
-          var pi = r.peaks[q], P = r.pts[pi], L = r.pts[pi - 1], R = r.pts[pi + 1];
-          var depth = Math.min(48, (r.snowLine - P[1]) * 0.9 + 18);
-          var lx = P[0] + (L[0] - P[0]) * clamp(depth / (L[1] - P[1] || 1), 0, 1), ly = P[1] + depth;
-          var rx = P[0] + (R[0] - P[0]) * clamp(depth / (R[1] - P[1] || 1), 0, 1), ry = P[1] + depth;
-          var cap = [P, [lx, ly], [lx + (P[0] - lx) * 0.3, ly - 6], [P[0] - 3, ly - 2], [P[0] + 5, ly - 7], [rx - (rx - P[0]) * 0.35, ry - 4], [rx, ry]];
-          c.fillStyle = rgb(snow); poly(c, cap); c.fill();
-          c.fillStyle = rgb(snowShade, 0.55); poly(c, [P, [sunx > P[0] ? lx : rx, ly], [P[0], ly - 3]]); c.fill();
-        }
+      var r = RIDGES[i], col = mix(hex(r.night), hex(r.day), light);
+      col = mix(col, hex('#D98A6B'), glow * (0.35 - i * 0.08));
+      c.fillStyle = rgb(col);
+      var pts = r.pts.slice(); pts.push([VW, SHORE + 5]); pts.push([0, SHORE + 5]);
+      poly(c, pts); c.fill();
+      if (i === 1) {
+        var snow = mix(mix(hex('#1E2F4A'), hex('#F3F6F9'), light), hex('#F7A98A'), glow * 0.85);
+        c.fillStyle = rgb(snow);
+        for (var q = 0; q < SNOW.length; q++) { poly(c, SNOW[q]); c.fill(); }
       }
     }
   }
   function paintTrees(c, light, t, w) {
-    for (var row = 1; row <= 3; row++) {
-      var col = row === 1 ? mix(hex('#0B1A24'), hex('#233E3A'), light) : row === 2 ? mix(hex('#08151C'), hex('#183129'), light) : mix(hex('#050F14'), hex('#10251E'), light);
+    for (var row = 0; row < 2; row++) {
+      var col = row === 0 ? mix(hex('#07141A'), hex('#10261F'), light) : mix(hex('#050F14'), hex('#16302A'), light);
       c.fillStyle = rgb(col);
       for (var i = 0; i < TREES.length; i++) {
         var tr = TREES[i]; if (tr.row !== row) continue;
-        var sway = (1.5 + w * 4) * Math.sin(t * 0.55 + tr.p + tr.x / 180) * (tr.h / 40);
-        var tiers = 4, hw = tr.h * tr.w;
-        c.beginPath(); c.moveTo(tr.x - 1.2, tr.base); c.lineTo(tr.x + 1.2, tr.base);
-        for (var k = 0; k < tiers; k++) {                                        // stacked tiers, each narrower
-          var y0 = tr.base - tr.h * (0.25 + 0.75 * k / tiers), y1 = tr.base - tr.h * (0.25 + 0.75 * (k + 1) / tiers);
-          var ww = hw * (1 - k / tiers * 0.72), sx = sway * ((k + 1) / tiers) * ((k + 1) / tiers);
-          c.lineTo(tr.x + ww + sx * 0.6, y0); c.lineTo(tr.x + sx, y1);
-        }
-        for (k = tiers - 1; k >= 0; k--) {
-          var y0b = tr.base - tr.h * (0.25 + 0.75 * k / tiers), y1b = tr.base - tr.h * (0.25 + 0.75 * (k + 1) / tiers);
-          var wwb = hw * (1 - k / tiers * 0.72), sxb = sway * ((k + 1) / tiers) * ((k + 1) / tiers);
-          c.lineTo(tr.x + sxb, y1b); c.lineTo(tr.x - wwb + sxb * 0.6, y0b);
-        }
-        c.closePath(); c.fill();
+        var sway = (w * 6 + 2) * Math.sin(t * 1.5 + tr.p + tr.x / 140) * (tr.h / 40);
+        var base = row === 0 ? SHORE - 6 : SHORE;
+        c.beginPath();
+        c.moveTo(tr.x - tr.w, base); c.lineTo(tr.x - tr.w * 0.5 + sway * 0.35, base - tr.h * 0.55); c.lineTo(tr.x + sway, base - tr.h);
+        c.lineTo(tr.x + tr.w * 0.5 + sway * 0.35, base - tr.h * 0.55); c.lineTo(tr.x + tr.w, base); c.closePath(); c.fill();
       }
     }
-    c.fillStyle = rgb(mix(hex('#050F14'), hex('#10251E'), light)); c.fillRect(0, SHORE - 6, VW, 12);
+    c.fillStyle = rgb(mix(hex('#050F14'), hex('#16302A'), light)); c.fillRect(0, SHORE - 8, VW, 10);
   }
   function paintMist(c, light, night, t) {
     var a = 0.16 * (1 - light) + 0.05;                                            // low mist over the water at dawn/dusk/night
@@ -352,6 +314,159 @@
     c.fillStyle = v; c.fillRect(0, 0, VW, VH);
   }
 
+
+  // =====================================================================
+  //  Characters (cartoon scale on purpose — real scale would be a dot)
+  // =====================================================================
+  var BEAR_MIN = 700, BEAR_MAX = 1540;
+  var bears = { x: 1050, dir: 1, phase: 0, mode: 'walk', cubs: [{ x: 990, y: 0, ph: 1.2 }, { x: 940, y: 0, ph: 2.6 }] };
+  var lastT = null;
+
+  function drawBear(c, x, y, dir, scale, phase, sniff, light, cub) {
+    // y = ground line under the feet; drawn facing +x, mirrored for dir = -1
+    var fur = mix(hex('#3A2612'), cub ? hex('#8A6338') : hex('#6E4A28'), light);
+    var fur2 = mix(hex('#2B1A0C'), cub ? hex('#6F4C28') : hex('#54371C'), light);
+    var muzzle = mix(hex('#4E3A26'), hex('#C9A57C'), light);
+    c.save(); c.translate(x, y); c.scale(dir * scale, scale);
+    var bob = 1.2 * Math.sin(phase * 2);
+    // far legs (darker), near legs — quadruped walk: diagonal pairs swing together
+    var legs = [[-18, 0], [-8, Math.PI], [14, Math.PI], [22, 0]];
+    for (var pass = 0; pass < 2; pass++) {
+      c.strokeStyle = rgb(pass === 0 ? fur2 : fur); c.lineWidth = cub ? 7 : 6.5; c.lineCap = 'round';
+      for (var i = 0; i < legs.length; i++) {
+        if ((i % 2 === 0) !== (pass === 0)) continue;
+        var sw = 9 * Math.sin(phase + legs[i][1]) * (sniff ? 0.15 : 1);
+        var lift = Math.max(0, Math.sin(phase + legs[i][1])) * 3 * (sniff ? 0 : 1);
+        c.beginPath(); c.moveTo(legs[i][0], -10 + bob); c.lineTo(legs[i][0] + sw, -lift); c.stroke();
+      }
+      if (pass === 0) {
+        // body + shoulder hump
+        c.fillStyle = rgb(fur);
+        c.beginPath(); c.ellipse(0, -18 + bob, 31, 15, 0, 0, 6.283); c.fill();
+        c.beginPath(); c.arc(-6, -29 + bob, 12, 0, 6.283); c.fill();
+        c.beginPath(); c.arc(-30, -20 + bob, 4, 0, 6.283); c.fill();          // tail
+      }
+    }
+    // head (lowers when sniffing)
+    var hy = -26 + bob + (sniff ? 9 : 0), hx = 27 + (sniff ? 3 : 0);
+    c.fillStyle = rgb(fur);
+    c.beginPath(); c.arc(hx - 4, hy - 8, 4, 0, 6.283); c.arc(hx + 4, hy - 9, 4, 0, 6.283); c.fill();   // ears
+    c.beginPath(); c.arc(hx, hy, cub ? 11 : 10, 0, 6.283); c.fill();
+    c.fillStyle = rgb(muzzle); c.beginPath(); c.ellipse(hx + 8, hy + 3, 6, 4.2, 0, 0, 6.283); c.fill();
+    c.fillStyle = rgb(fur2); c.beginPath(); c.arc(hx + 12.5, hy + 2, 2, 0, 6.283); c.fill();          // nose
+    c.fillStyle = 'rgba(20,12,6,0.9)'; c.beginPath(); c.arc(hx + 3, hy - 2, 1.3, 0, 6.283); c.fill(); // eye
+    c.restore();
+  }
+  function updateBears(t, dt) {
+    var p = (t + 11) % 38;                                                    // 30 s walking, 8 s sniffing
+    bears.mode = p < 30 ? 'walk' : 'sniff';
+    if (bears.mode === 'walk') {
+      var speed = 13;
+      bears.x += bears.dir * speed * dt; bears.phase += speed * dt * 0.16;
+      if (bears.x > BEAR_MAX) { bears.x = BEAR_MAX; bears.dir = -1; }
+      if (bears.x < BEAR_MIN) { bears.x = BEAR_MIN; bears.dir = 1; }
+    }
+    for (var i = 0; i < bears.cubs.length; i++) {
+      var cub = bears.cubs[i], target = bears.x - bears.dir * (58 + i * 46) + 10 * Math.sin(t * 0.3 + cub.ph);
+      var dx = target - cub.x, step = clamp(dx * 1.8 * dt, -28 * dt, 28 * dt);
+      cub.x += step; cub.v = Math.abs(step / dt);
+      cub.dir = Math.abs(dx) > 4 ? (dx > 0 ? 1 : -1) : bears.dir;
+      cub.ph += cub.v * dt * 0.22;
+      var play = Math.max(0, Math.sin(t * 0.9 + cub.ph * 0.1)) > 0.97;          // occasional hop
+      cub.y = play ? -4 * Math.abs(Math.sin(t * 6)) : 0;
+    }
+  }
+  function paintBears(c, light, t) {
+    var y = SHORE + 1;
+    for (var i = bears.cubs.length - 1; i >= 0; i--) {
+      var cub = bears.cubs[i];
+      drawBear(c, cub.x, y + cub.y, cub.dir, 0.55, cub.ph, cub.v < 1 && bears.mode === 'sniff', light, true);
+    }
+    drawBear(c, bears.x, y, bears.dir, 1, bears.phase, bears.mode === 'sniff', light, false);
+  }
+
+  // ---------- hikers on the low peak, camp at night ----------
+  var TRAIL = [[1225, ridgeY(1225)], [1300, ridgeY(1300)], [1380, 485], [1450, ridgeY(1450)], [1520, ridgeY(1520)]];
+  var TRAIL_LEN = []; (function () { var L = 0; TRAIL_LEN.push(0); for (var i = 1; i < TRAIL.length; i++) { L += Math.hypot(TRAIL[i][0] - TRAIL[i - 1][0], TRAIL[i][1] - TRAIL[i - 1][1]); TRAIL_LEN.push(L); } })();
+  var TRAIL_TOTAL = TRAIL_LEN[TRAIL_LEN.length - 1];
+  function trailPoint(s) {
+    s = clamp(s, 0, TRAIL_TOTAL);
+    for (var i = 1; i < TRAIL.length; i++) if (s <= TRAIL_LEN[i]) {
+      var f = (s - TRAIL_LEN[i - 1]) / (TRAIL_LEN[i] - TRAIL_LEN[i - 1] || 1);
+      return [lerp(TRAIL[i - 1][0], TRAIL[i][0], f), lerp(TRAIL[i - 1][1], TRAIL[i][1], f)];
+    }
+    return TRAIL[TRAIL.length - 1];
+  }
+  var HIKERS = [{ jacket: '#D9482B', pack: '#2F5D8C' }, { jacket: '#2E7DBF', pack: '#C9A227' }, { jacket: '#E3B341', pack: '#4E7A4A' }];
+  var CAMP = { x: 1318, y: ridgeY(1318) };
+  function drawHiker(c, x, y, dir, phase, moving, jacket, pack, light, wave) {
+    var skin = mix(hex('#5A4032'), hex('#E8B58F'), light), j = mix(hex(jacket), hex('#101820'), 0.55 * (1 - light)), pk = mix(hex(pack), hex('#101820'), 0.55 * (1 - light));
+    c.save(); c.translate(x, y); c.scale(dir, 1);
+    var bob = moving ? 1.2 * Math.abs(Math.sin(phase)) : 0;
+    var l1 = moving ? 5 * Math.sin(phase) : 0, l2 = moving ? -5 * Math.sin(phase) : 0;
+    c.strokeStyle = '#2B3340'; c.lineWidth = 3; c.lineCap = 'round';
+    c.beginPath(); c.moveTo(-1, -10 + bob); c.lineTo(-1 + l1, 0); c.stroke();
+    c.beginPath(); c.moveTo(2, -10 + bob); c.lineTo(2 + l2, 0); c.stroke();
+    c.fillStyle = rgb(pk); c.fillRect(-7, -22 + bob, 5, 11);                                   // backpack
+    c.fillStyle = rgb(j); c.beginPath(); c.roundRect ? c.roundRect(-3.5, -23 + bob, 8, 14, 2) : c.rect(-3.5, -23 + bob, 8, 14); c.fill();
+    c.fillStyle = rgb(skin); c.beginPath(); c.arc(1, -27 + bob, 3.8, 0, 6.283); c.fill();     // head
+    c.fillStyle = rgb(j); c.beginPath(); c.arc(1, -29 + bob, 4, Math.PI, 0); c.fill();        // hat
+    c.strokeStyle = rgb(skin); c.lineWidth = 2.2;
+    if (wave) { c.beginPath(); c.moveTo(3, -19 + bob); c.lineTo(8, -30 + bob + 2 * Math.sin(phase * 3)); c.stroke(); }
+    else { var a = moving ? 3 * Math.sin(phase + Math.PI) : 2; c.beginPath(); c.moveTo(3, -19 + bob); c.lineTo(7 + a, -12 + bob); c.stroke();
+           c.strokeStyle = '#8C9AA8'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(7 + a, -12 + bob); c.lineTo(9 + a, 0); c.stroke(); }  // hiking pole
+    c.restore();
+  }
+  function drawTent(c, x, y, glow, night, t) {
+    var flick = 0.85 + 0.15 * Math.sin(t * 7.3) * Math.sin(t * 3.1);
+    // level pad
+    c.fillStyle = 'rgba(20,32,44,0.9)'; c.beginPath(); c.moveTo(x - 30, y + 1); c.lineTo(x + 34, y + 1); c.lineTo(x + 30, y + 5); c.lineTo(x - 26, y + 5); c.closePath(); c.fill();
+    if (glow > 0) {                                                                            // lamp light spilling out
+      var g = c.createRadialGradient(x + 2, y - 8, 4, x + 2, y - 8, 70);
+      g.addColorStop(0, 'rgba(255,200,110,' + (0.35 * glow * flick).toFixed(3) + ')'); g.addColorStop(1, 'rgba(255,200,110,0)');
+      c.fillStyle = g; c.fillRect(x - 70, y - 78, 140, 84);
+    }
+    var canvasCol = mix(hex('#3B2418'), hex('#D9822B'), 1 - night * 0.7);
+    var lit = mix(canvasCol, hex('#FFD27A'), glow * 0.9);
+    c.fillStyle = rgb(mix(canvasCol, hex('#000000'), 0.25)); c.beginPath(); c.moveTo(x - 22, y); c.lineTo(x + 2, y - 24); c.lineTo(x + 30, y); c.closePath(); c.fill();
+    c.fillStyle = rgb(lit); c.beginPath(); c.moveTo(x - 14, y); c.lineTo(x + 2, y - 24); c.lineTo(x + 20, y); c.closePath(); c.fill();
+    c.fillStyle = rgb(mix(lit, hex('#000000'), 0.35)); c.beginPath(); c.moveTo(x - 3, y); c.lineTo(x + 2, y - 14); c.lineTo(x + 8, y); c.closePath(); c.fill();  // door
+    if (glow > 0) { c.fillStyle = 'rgba(255,225,150,' + (0.9 * glow * flick).toFixed(3) + ')'; c.beginPath(); c.arc(x + 2, y - 15, 1.8, 0, 6.283); c.fill(); }   // lamp
+  }
+  function drawFire(c, x, y, a, t) {
+    if (a <= 0) return;
+    var g = c.createRadialGradient(x, y - 4, 2, x, y - 4, 40);
+    g.addColorStop(0, 'rgba(255,170,70,' + (0.4 * a).toFixed(3) + ')'); g.addColorStop(1, 'rgba(255,120,40,0)');
+    c.fillStyle = g; c.fillRect(x - 40, y - 44, 80, 48);
+    c.fillStyle = 'rgba(70,45,30,0.95)'; c.fillRect(x - 6, y - 2, 12, 2.2);
+    for (var i = 0; i < 3; i++) {
+      var h = 6 + 4 * Math.abs(Math.sin(t * 9 + i * 2.1)), w = 2.4 - i * 0.5;
+      c.fillStyle = i === 2 ? 'rgba(255,240,170,' + (0.9 * a).toFixed(2) + ')' : 'rgba(255,' + (150 + 40 * i) + ',60,' + (0.85 * a).toFixed(2) + ')';
+      c.beginPath(); c.moveTo(x - w * 2, y - 2); c.quadraticCurveTo(x - w, y - h * 0.6, x + 0.5 * Math.sin(t * 11 + i), y - h - 2 * i); c.quadraticCurveTo(x + w, y - h * 0.6, x + w * 2, y - 2); c.closePath(); c.fill();
+    }
+  }
+  function paintHikers(c, light, night, sun, t) {
+    var hiking = sun.elev > 4;
+    var glow = smooth(3, -4, sun.elev);                                                       // lamp on from dusk
+    drawTent(c, CAMP.x, CAMP.y, glow, night, t);
+    if (hiking) {
+      var T = 64, p = t % T, s, moving = true, wave = false;
+      if (p < 24) s = TRAIL_TOTAL * p / 24;
+      else if (p < 30) { s = TRAIL_TOTAL; moving = false; wave = true; }
+      else if (p < 54) s = TRAIL_TOTAL * (1 - (p - 30) / 24);
+      else { s = 0; moving = false; }
+      var dir = (p < 30) ? 1 : -1;
+      for (var i = 0; i < HIKERS.length; i++) {
+        var pt = trailPoint(s - dir * i * 20 * (moving ? 1 : 0.9));
+        drawHiker(c, pt[0], pt[1], dir, t * 6 + i * 1.1, moving, HIKERS[i].jacket, HIKERS[i].pack, light, wave && i === 0);
+      }
+    } else {
+      drawFire(c, CAMP.x + 30, CAMP.y + 1, glow, t);
+      drawHiker(c, CAMP.x + 46, CAMP.y + 1, -1, 0, false, HIKERS[0].jacket, HIKERS[0].pack, light, false);
+      drawHiker(c, CAMP.x + 17, CAMP.y + 1, 1, 0, false, HIKERS[1].jacket, HIKERS[1].pack, light, false);
+    }
+  }
+
   function frame(now) {
     var t = now / 1000, date = sceneDate(), sun = solar(date);
     var light = smooth(-8, 8, sun.elev), night = smooth(2, -10, sun.elev), sc = skyColors(sun.elev), w = wind(t);
@@ -366,6 +481,10 @@
     paintRidges(tctx, light, sun, sc);
     paintMist(tctx, light, night, t);
     paintTrees(tctx, light, t, w);
+    paintHikers(tctx, light, night, sun, t);
+    var dt = lastT == null ? 0.033 : Math.min(0.1, t - lastT); lastT = t;
+    updateBears(t, dt);
+    paintBears(tctx, light, t);
 
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     ctx.clearRect(0, 0, W, H);
