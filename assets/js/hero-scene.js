@@ -318,75 +318,91 @@
   // =====================================================================
   //  Characters (cartoon scale on purpose — real scale would be a dot)
   // =====================================================================
-  var BEAR_MIN = 700, BEAR_MAX = 1540;
-  var bears = { x: 1050, dir: 1, phase: 0, mode: 'walk', cubs: [{ x: 990, y: 0, ph: 1.2 }, { x: 940, y: 0, ph: 2.6 }] };
+  var BEAR_MIN = 640, BEAR_MAX = 1330;                                        // stays inside the view on all screens
+  var bears = { x: 1050, dir: 1, phase: 0, mode: 'walk', y: 0, alpha: 1, inForest: false,
+                cubs: [{ x: 1010, y: 0, ph: 1.2, v: 0, dir: 1 }, { x: 975, y: 0, ph: 2.6, v: 0, dir: 1 }] };
   var lastT = null;
 
-  function drawBear(c, x, y, dir, scale, phase, sniff, light, cub) {
-    // y = ground line under the feet; drawn facing +x, mirrored for dir = -1
-    var fur = mix(hex('#3A2612'), cub ? hex('#8A6338') : hex('#6E4A28'), light);
-    var fur2 = mix(hex('#2B1A0C'), cub ? hex('#6F4C28') : hex('#54371C'), light);
+  // round grizzly: one smooth blob for the body (shoulders a little higher than the rump), round head, round ears
+  function drawBear(c, x, y, dir, scale, phase, sniff, light, cub, alpha) {
+    var fur = mix(hex('#3A2612'), cub ? hex('#8B653B') : hex('#6E4A28'), light);
+    var fur2 = mix(hex('#2B1A0C'), cub ? hex('#6C4A28') : hex('#54371C'), light);
     var muzzle = mix(hex('#4E3A26'), hex('#C9A57C'), light);
-    c.save(); c.translate(x, y); c.scale(dir * scale, scale);
-    var bob = 1.2 * Math.sin(phase * 2);
-    // far legs (darker), near legs — quadruped walk: diagonal pairs swing together
-    var legs = [[-18, 0], [-8, Math.PI], [14, Math.PI], [22, 0]];
+    c.save(); c.globalAlpha = alpha; c.translate(x, y); c.scale(dir * scale, scale);
+    var bob = 0.9 * Math.sin(phase * 2), still = sniff ? 0 : 1;
+    var legs = [[-13, 0], [-6, Math.PI], [8, Math.PI], [14, 0]];
     for (var pass = 0; pass < 2; pass++) {
-      c.strokeStyle = rgb(pass === 0 ? fur2 : fur); c.lineWidth = cub ? 7 : 6.5; c.lineCap = 'round';
+      c.strokeStyle = rgb(pass === 0 ? fur2 : fur); c.lineWidth = cub ? 6.5 : 6; c.lineCap = 'round';
       for (var i = 0; i < legs.length; i++) {
         if ((i % 2 === 0) !== (pass === 0)) continue;
-        var sw = 9 * Math.sin(phase + legs[i][1]) * (sniff ? 0.15 : 1);
-        var lift = Math.max(0, Math.sin(phase + legs[i][1])) * 3 * (sniff ? 0 : 1);
-        c.beginPath(); c.moveTo(legs[i][0], -10 + bob); c.lineTo(legs[i][0] + sw, -lift); c.stroke();
+        var sw = 6 * Math.sin(phase + legs[i][1]) * still, lift = Math.max(0, Math.sin(phase + legs[i][1])) * 2.5 * still;
+        c.beginPath(); c.moveTo(legs[i][0], -9 + bob); c.lineTo(legs[i][0] + sw, -lift); c.stroke();
       }
       if (pass === 0) {
-        // body + shoulder hump
         c.fillStyle = rgb(fur);
-        c.beginPath(); c.ellipse(0, -18 + bob, 31, 15, 0, 0, 6.283); c.fill();
-        c.beginPath(); c.arc(-6, -29 + bob, 12, 0, 6.283); c.fill();
-        c.beginPath(); c.arc(-30, -20 + bob, 4, 0, 6.283); c.fill();          // tail
+        c.beginPath();
+        c.moveTo(-22, -12 + bob);
+        c.bezierCurveTo(-24, -26 + bob, -8, -32 + bob, 4, -30 + bob);    // rump up to shoulders
+        c.bezierCurveTo(14, -29 + bob, 22, -24 + bob, 21, -14 + bob);    // shoulders down to chest
+        c.bezierCurveTo(20, -4 + bob, -20, -3 + bob, -22, -12 + bob);    // belly
+        c.closePath(); c.fill();
+        c.beginPath(); c.arc(-22, -16 + bob, 3, 0, 6.283); c.fill();      // tail
       }
     }
-    // head (lowers when sniffing)
-    var hy = -26 + bob + (sniff ? 9 : 0), hx = 27 + (sniff ? 3 : 0);
+    var hy = -25 + bob + (sniff ? 8 : 0), hx = 21 + (sniff ? 2 : 0), hr = cub ? 9.5 : 8.5;
     c.fillStyle = rgb(fur);
-    c.beginPath(); c.arc(hx - 4, hy - 8, 4, 0, 6.283); c.arc(hx + 4, hy - 9, 4, 0, 6.283); c.fill();   // ears
-    c.beginPath(); c.arc(hx, hy, cub ? 11 : 10, 0, 6.283); c.fill();
-    c.fillStyle = rgb(muzzle); c.beginPath(); c.ellipse(hx + 8, hy + 3, 6, 4.2, 0, 0, 6.283); c.fill();
-    c.fillStyle = rgb(fur2); c.beginPath(); c.arc(hx + 12.5, hy + 2, 2, 0, 6.283); c.fill();          // nose
-    c.fillStyle = 'rgba(20,12,6,0.9)'; c.beginPath(); c.arc(hx + 3, hy - 2, 1.3, 0, 6.283); c.fill(); // eye
+    c.beginPath(); c.arc(hx - 4, hy - 7, 3.2, 0, 6.283); c.arc(hx + 3, hy - 8, 3.2, 0, 6.283); c.fill();
+    c.beginPath(); c.arc(hx, hy, hr, 0, 6.283); c.fill();
+    c.fillStyle = rgb(muzzle); c.beginPath(); c.ellipse(hx + 6.5, hy + 2.5, 4.6, 3.4, 0, 0, 6.283); c.fill();
+    c.fillStyle = rgb(fur2); c.beginPath(); c.arc(hx + 10, hy + 1.6, 1.6, 0, 6.283); c.fill();
+    c.fillStyle = 'rgba(20,12,6,0.9)'; c.beginPath(); c.arc(hx + 2.5, hy - 1.5, 1.1, 0, 6.283); c.fill();
     c.restore();
   }
+  // life cycle (period 150 s): on the shore -> into the forest (fade out behind the trees) -> away -> back out somewhere else
   function updateBears(t, dt) {
-    var p = (t + 11) % 38;                                                    // 30 s walking, 8 s sniffing
-    bears.mode = p < 30 ? 'walk' : 'sniff';
-    if (bears.mode === 'walk') {
-      var speed = 13;
-      bears.x += bears.dir * speed * dt; bears.phase += speed * dt * 0.16;
-      if (bears.x > BEAR_MAX) { bears.x = BEAR_MAX; bears.dir = -1; }
-      if (bears.x < BEAR_MIN) { bears.x = BEAR_MIN; bears.dir = 1; }
+    var CY = 150, p = t % CY, cyc = Math.floor(t / CY);
+    var stage = p < 92 ? 'shore' : p < 100 ? 'enter' : p < 132 ? 'away' : p < 140 ? 'exit' : 'shore';
+    var newX = 700 + ((cyc * 613) % 560);                                   // where they reappear
+    bears.inForest = stage !== 'shore';
+    if (stage === 'shore') {
+      var q = (t + 11) % 38; bears.mode = q < 30 ? 'walk' : 'sniff';
+      bears.y = 0; bears.alpha = 1;
+      if (bears.mode === 'walk') {
+        bears.x += bears.dir * 11 * dt; bears.phase += 11 * dt * 0.2;
+        if (bears.x > BEAR_MAX) { bears.x = BEAR_MAX; bears.dir = -1; }
+        if (bears.x < BEAR_MIN) { bears.x = BEAR_MIN; bears.dir = 1; }
+      }
+    } else if (stage === 'enter') {
+      var f = (p - 92) / 8; bears.mode = 'walk'; bears.y = -14 * f; bears.alpha = 1 - smooth(0.35, 1, f);
+      bears.x += bears.dir * 5 * dt; bears.phase += 9 * dt * 0.2;
+    } else if (stage === 'away') {
+      bears.alpha = 0; bears.x = newX; bears.dir = newX > 1000 ? -1 : 1; bears.y = -14;
+      for (var k = 0; k < bears.cubs.length; k++) { bears.cubs[k].x = newX - bears.dir * (30 + k * 24); bears.cubs[k].y = -14; }
+    } else if (stage === 'exit') {
+      var g = (p - 132) / 8; bears.mode = 'walk'; bears.y = -14 * (1 - g); bears.alpha = smooth(0, 0.65, g);
+      bears.x += bears.dir * 5 * dt; bears.phase += 9 * dt * 0.2;
     }
     for (var i = 0; i < bears.cubs.length; i++) {
-      var cub = bears.cubs[i], target = bears.x - bears.dir * (58 + i * 46) + 10 * Math.sin(t * 0.3 + cub.ph);
-      var dx = target - cub.x, step = clamp(dx * 1.8 * dt, -28 * dt, 28 * dt);
-      cub.x += step; cub.v = Math.abs(step / dt);
-      cub.dir = Math.abs(dx) > 4 ? (dx > 0 ? 1 : -1) : bears.dir;
-      cub.ph += cub.v * dt * 0.22;
-      var play = Math.max(0, Math.sin(t * 0.9 + cub.ph * 0.1)) > 0.97;          // occasional hop
-      cub.y = play ? -4 * Math.abs(Math.sin(t * 6)) : 0;
+      var cub = bears.cubs[i], target = bears.x - bears.dir * (32 + i * 26) + 6 * Math.sin(t * 0.3 + cub.ph);
+      var dx = target - cub.x, step = clamp(dx * 1.8 * dt, -22 * dt, 22 * dt);
+      cub.x += step; cub.v = Math.abs(step / dt); cub.dir = Math.abs(dx) > 3 ? (dx > 0 ? 1 : -1) : bears.dir;
+      cub.ph += cub.v * dt * 0.28;
+      var hop = Math.sin(t * 0.9 + cub.ph * 0.1) > 0.97 && stage === 'shore';
+      cub.y = bears.y + (hop ? -3 * Math.abs(Math.sin(t * 6)) : 0);
     }
   }
-  function paintBears(c, light, t) {
+  function paintBears(c, light, t, behindTrees) {
+    if (bears.inForest !== behindTrees || bears.alpha <= 0) return;
     var y = SHORE + 1;
     for (var i = bears.cubs.length - 1; i >= 0; i--) {
       var cub = bears.cubs[i];
-      drawBear(c, cub.x, y + cub.y, cub.dir, 0.55, cub.ph, cub.v < 1 && bears.mode === 'sniff', light, true);
+      drawBear(c, cub.x, y + cub.y, cub.dir, 0.36, cub.ph, cub.v < 1 && bears.mode === 'sniff', light, true, bears.alpha);
     }
-    drawBear(c, bears.x, y, bears.dir, 1, bears.phase, bears.mode === 'sniff', light, false);
+    drawBear(c, bears.x, y + bears.y, bears.dir, 0.6, bears.phase, bears.mode === 'sniff', light, false, bears.alpha);
   }
 
-  // ---------- hikers on the low peak, camp at night ----------
-  var TRAIL = [[1225, ridgeY(1225)], [1300, ridgeY(1300)], [1380, 485], [1450, ridgeY(1450)], [1520, ridgeY(1520)]];
+  // ---------- hikers on the low peak; dome tent pitched on the slope ----------
+  var TRAIL = [[1292, ridgeY(1292)], [1336, ridgeY(1336)], [1380, 485], [1424, ridgeY(1424)]];
   var TRAIL_LEN = []; (function () { var L = 0; TRAIL_LEN.push(0); for (var i = 1; i < TRAIL.length; i++) { L += Math.hypot(TRAIL[i][0] - TRAIL[i - 1][0], TRAIL[i][1] - TRAIL[i - 1][1]); TRAIL_LEN.push(L); } })();
   var TRAIL_TOTAL = TRAIL_LEN[TRAIL_LEN.length - 1];
   function trailPoint(s) {
@@ -397,58 +413,87 @@
     }
     return TRAIL[TRAIL.length - 1];
   }
-  var HIKERS = [{ jacket: '#D9482B', pack: '#2F5D8C' }, { jacket: '#2E7DBF', pack: '#C9A227' }, { jacket: '#E3B341', pack: '#4E7A4A' }];
-  var CAMP = { x: 1318, y: ridgeY(1318) };
-  function drawHiker(c, x, y, dir, phase, moving, jacket, pack, light, wave) {
-    var skin = mix(hex('#5A4032'), hex('#E8B58F'), light), j = mix(hex(jacket), hex('#101820'), 0.55 * (1 - light)), pk = mix(hex(pack), hex('#101820'), 0.55 * (1 - light));
-    c.save(); c.translate(x, y); c.scale(dir, 1);
-    var bob = moving ? 1.2 * Math.abs(Math.sin(phase)) : 0;
-    var l1 = moving ? 5 * Math.sin(phase) : 0, l2 = moving ? -5 * Math.sin(phase) : 0;
-    c.strokeStyle = '#2B3340'; c.lineWidth = 3; c.lineCap = 'round';
-    c.beginPath(); c.moveTo(-1, -10 + bob); c.lineTo(-1 + l1, 0); c.stroke();
-    c.beginPath(); c.moveTo(2, -10 + bob); c.lineTo(2 + l2, 0); c.stroke();
-    c.fillStyle = rgb(pk); c.fillRect(-7, -22 + bob, 5, 11);                                   // backpack
-    c.fillStyle = rgb(j); c.beginPath(); c.roundRect ? c.roundRect(-3.5, -23 + bob, 8, 14, 2) : c.rect(-3.5, -23 + bob, 8, 14); c.fill();
-    c.fillStyle = rgb(skin); c.beginPath(); c.arc(1, -27 + bob, 3.8, 0, 6.283); c.fill();     // head
-    c.fillStyle = rgb(j); c.beginPath(); c.arc(1, -29 + bob, 4, Math.PI, 0); c.fill();        // hat
-    c.strokeStyle = rgb(skin); c.lineWidth = 2.2;
+  var HIKERS = [
+    { skin: '#8D5524', hat: '#2B2B2B', jacket: '#D9482B', pants: '#3C4A5C', boots: '#2A2118', pack: '#2F5D8C' },
+    { skin: '#E8B58F', hat: '#C9A227', jacket: '#2E7DBF', pants: '#6B5B3E', boots: '#3B2A1C', pack: '#8E3B3B' },
+    { skin: '#C68642', hat: '#4E7A4A', jacket: '#E3B341', pants: '#2F3B4C', boots: '#2A2118', pack: '#3F6B4F' }
+  ];
+  var HK = 0.62;                                                              // hiker scale
+  var CAMP = { x: 1258, y: ridgeY(1258), ang: Math.atan2(ridgeY(1276) - ridgeY(1240), 36) };
+  function drawHiker(c, x, y, dir, phase, moving, hk, light, wave, sit) {
+    var dim = 0.55 * (1 - light), shade = function (h) { return rgb(mix(hex(h), hex('#101820'), dim)); };
+    c.save(); c.translate(x, y); c.scale(dir * HK, HK);
+    var bob = moving ? 1.2 * Math.abs(Math.sin(phase)) : 0, l1 = moving ? 5 * Math.sin(phase) : 0, l2 = -l1;
+    c.lineCap = 'round';
+    if (sit) {                                                                // seated by the fire
+      c.strokeStyle = shade(hk.pants); c.lineWidth = 3.2;
+      c.beginPath(); c.moveTo(-1, -12); c.lineTo(6, -9); c.lineTo(8, -1); c.stroke();
+      c.beginPath(); c.moveTo(1, -12); c.lineTo(8, -8); c.lineTo(10, -1); c.stroke();
+      c.strokeStyle = shade(hk.boots); c.lineWidth = 3.4; c.beginPath(); c.moveTo(8, -1); c.lineTo(11, -1); c.stroke();
+      c.fillStyle = shade(hk.jacket); c.beginPath(); c.roundRect(-4, -24, 8, 13, 2); c.fill();
+      c.fillStyle = shade(hk.skin); c.beginPath(); c.arc(1, -28, 3.8, 0, 6.283); c.fill();
+      c.fillStyle = shade(hk.hat); c.beginPath(); c.arc(1, -30, 4, Math.PI, 0); c.fill();
+      c.strokeStyle = shade(hk.skin); c.lineWidth = 2; c.beginPath(); c.moveTo(3, -19); c.lineTo(9, -15); c.stroke();
+      c.restore(); return;
+    }
+    // legs (pants) + boots
+    c.strokeStyle = shade(hk.pants); c.lineWidth = 3;
+    c.beginPath(); c.moveTo(-1, -10 + bob); c.lineTo(-1 + l1, -2); c.stroke();
+    c.beginPath(); c.moveTo(2, -10 + bob); c.lineTo(2 + l2, -2); c.stroke();
+    c.strokeStyle = shade(hk.boots); c.lineWidth = 3.4;
+    c.beginPath(); c.moveTo(-1 + l1, -2); c.lineTo(0.5 + l1, 0); c.stroke();
+    c.beginPath(); c.moveTo(2 + l2, -2); c.lineTo(3.5 + l2, 0); c.stroke();
+    // backpack, jacket, head, hat
+    c.fillStyle = shade(hk.pack); c.beginPath(); c.roundRect(-7.5, -22 + bob, 5, 11, 1.5); c.fill();
+    c.fillStyle = shade(hk.jacket); c.beginPath(); c.roundRect(-3.5, -23 + bob, 8, 14, 2); c.fill();
+    c.fillStyle = 'rgba(0,0,0,0.18)'; c.fillRect(0.2, -22 + bob, 1, 12);   // zip line
+    c.fillStyle = shade(hk.skin); c.beginPath(); c.arc(1, -27 + bob, 3.8, 0, 6.283); c.fill();
+    c.fillStyle = shade(hk.hat); c.beginPath(); c.arc(1, -29 + bob, 4.2, Math.PI, 0); c.fill(); c.fillRect(-3.2, -29.5 + bob, 9.5, 1.6);
+    // arm: waving, or holding a pole
+    c.strokeStyle = shade(hk.jacket); c.lineWidth = 2.4;
     if (wave) { c.beginPath(); c.moveTo(3, -19 + bob); c.lineTo(8, -30 + bob + 2 * Math.sin(phase * 3)); c.stroke(); }
-    else { var a = moving ? 3 * Math.sin(phase + Math.PI) : 2; c.beginPath(); c.moveTo(3, -19 + bob); c.lineTo(7 + a, -12 + bob); c.stroke();
-           c.strokeStyle = '#8C9AA8'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(7 + a, -12 + bob); c.lineTo(9 + a, 0); c.stroke(); }  // hiking pole
+    else {
+      var a = moving ? 3 * Math.sin(phase + Math.PI) : 2;
+      c.beginPath(); c.moveTo(3, -19 + bob); c.lineTo(7 + a, -12 + bob); c.stroke();
+      c.strokeStyle = shade(hk.skin); c.lineWidth = 1.8; c.beginPath(); c.moveTo(6.5 + a, -12.5 + bob); c.lineTo(7.5 + a, -11.5 + bob); c.stroke();
+      c.strokeStyle = '#8C9AA8'; c.lineWidth = 1.1; c.beginPath(); c.moveTo(7 + a, -12 + bob); c.lineTo(9 + a, 0); c.stroke();
+    }
     c.restore();
   }
-  function drawTent(c, x, y, glow, night, t) {
+  function drawTent(c, x, y, ang, glow, night, t) {
     var flick = 0.85 + 0.15 * Math.sin(t * 7.3) * Math.sin(t * 3.1);
-    // level pad
-    c.fillStyle = 'rgba(20,32,44,0.9)'; c.beginPath(); c.moveTo(x - 30, y + 1); c.lineTo(x + 34, y + 1); c.lineTo(x + 30, y + 5); c.lineTo(x - 26, y + 5); c.closePath(); c.fill();
-    if (glow > 0) {                                                                            // lamp light spilling out
-      var g = c.createRadialGradient(x + 2, y - 8, 4, x + 2, y - 8, 70);
-      g.addColorStop(0, 'rgba(255,200,110,' + (0.35 * glow * flick).toFixed(3) + ')'); g.addColorStop(1, 'rgba(255,200,110,0)');
-      c.fillStyle = g; c.fillRect(x - 70, y - 78, 140, 84);
+    c.save(); c.translate(x, y); c.rotate(ang);                              // base follows the slope
+    if (glow > 0) {
+      var g = c.createRadialGradient(0, -6, 3, 0, -6, 60);
+      g.addColorStop(0, 'rgba(255,200,110,' + (0.32 * glow * flick).toFixed(3) + ')'); g.addColorStop(1, 'rgba(255,200,110,0)');
+      c.fillStyle = g; c.fillRect(-60, -66, 120, 72);
     }
-    var canvasCol = mix(hex('#3B2418'), hex('#D9822B'), 1 - night * 0.7);
-    var lit = mix(canvasCol, hex('#FFD27A'), glow * 0.9);
-    c.fillStyle = rgb(mix(canvasCol, hex('#000000'), 0.25)); c.beginPath(); c.moveTo(x - 22, y); c.lineTo(x + 2, y - 24); c.lineTo(x + 30, y); c.closePath(); c.fill();
-    c.fillStyle = rgb(lit); c.beginPath(); c.moveTo(x - 14, y); c.lineTo(x + 2, y - 24); c.lineTo(x + 20, y); c.closePath(); c.fill();
-    c.fillStyle = rgb(mix(lit, hex('#000000'), 0.35)); c.beginPath(); c.moveTo(x - 3, y); c.lineTo(x + 2, y - 14); c.lineTo(x + 8, y); c.closePath(); c.fill();  // door
-    if (glow > 0) { c.fillStyle = 'rgba(255,225,150,' + (0.9 * glow * flick).toFixed(3) + ')'; c.beginPath(); c.arc(x + 2, y - 15, 1.8, 0, 6.283); c.fill(); }   // lamp
+    var fabric = mix(hex('#4B2A14'), hex('#E0873A'), 1 - night * 0.7), lit = mix(fabric, hex('#FFD27A'), glow * 0.9);
+    c.fillStyle = 'rgba(15,26,36,0.55)'; c.beginPath(); c.ellipse(1, 0.5, 19, 2.2, 0, 0, 6.283); c.fill();   // ground shadow
+    c.fillStyle = rgb(lit); c.beginPath(); c.ellipse(0, 0, 17, 12, 0, Math.PI, 0); c.closePath(); c.fill();   // dome
+    c.strokeStyle = rgb(mix(lit, hex('#000000'), 0.28)); c.lineWidth = 0.9;                                  // pole seams
+    c.beginPath(); c.ellipse(0, 0, 9, 12, 0, Math.PI, 0); c.stroke();
+    c.beginPath(); c.moveTo(-17, 0); c.quadraticCurveTo(0, -14, 17, 0); c.stroke();
+    c.fillStyle = rgb(mix(lit, hex('#000000'), 0.42)); c.beginPath(); c.ellipse(4, 0, 5.5, 8, 0, Math.PI, 0); c.closePath(); c.fill();  // door
+    if (glow > 0) { c.fillStyle = 'rgba(255,228,160,' + (0.9 * glow * flick).toFixed(3) + ')'; c.beginPath(); c.arc(4, -6, 1.4, 0, 6.283); c.fill(); }
+    c.fillStyle = rgb(mix(hex('#9AA4AE'), hex('#3B4652'), night)); c.fillRect(-1.5, -12.5, 3, 1.2);   // vent
+    c.restore();
   }
   function drawFire(c, x, y, a, t) {
     if (a <= 0) return;
-    var g = c.createRadialGradient(x, y - 4, 2, x, y - 4, 40);
+    var g = c.createRadialGradient(x, y - 3, 1, x, y - 3, 30);
     g.addColorStop(0, 'rgba(255,170,70,' + (0.4 * a).toFixed(3) + ')'); g.addColorStop(1, 'rgba(255,120,40,0)');
-    c.fillStyle = g; c.fillRect(x - 40, y - 44, 80, 48);
-    c.fillStyle = 'rgba(70,45,30,0.95)'; c.fillRect(x - 6, y - 2, 12, 2.2);
+    c.fillStyle = g; c.fillRect(x - 30, y - 33, 60, 36);
+    c.fillStyle = 'rgba(70,45,30,0.95)'; c.fillRect(x - 4.5, y - 1.5, 9, 1.8);
     for (var i = 0; i < 3; i++) {
-      var h = 6 + 4 * Math.abs(Math.sin(t * 9 + i * 2.1)), w = 2.4 - i * 0.5;
+      var h = 4 + 3 * Math.abs(Math.sin(t * 9 + i * 2.1)), w = 1.8 - i * 0.4;
       c.fillStyle = i === 2 ? 'rgba(255,240,170,' + (0.9 * a).toFixed(2) + ')' : 'rgba(255,' + (150 + 40 * i) + ',60,' + (0.85 * a).toFixed(2) + ')';
-      c.beginPath(); c.moveTo(x - w * 2, y - 2); c.quadraticCurveTo(x - w, y - h * 0.6, x + 0.5 * Math.sin(t * 11 + i), y - h - 2 * i); c.quadraticCurveTo(x + w, y - h * 0.6, x + w * 2, y - 2); c.closePath(); c.fill();
+      c.beginPath(); c.moveTo(x - w * 2, y - 1.5); c.quadraticCurveTo(x - w, y - h * 0.6, x + 0.4 * Math.sin(t * 11 + i), y - h - 1.5 * i); c.quadraticCurveTo(x + w, y - h * 0.6, x + w * 2, y - 1.5); c.closePath(); c.fill();
     }
   }
   function paintHikers(c, light, night, sun, t) {
-    var hiking = sun.elev > 4;
-    var glow = smooth(3, -4, sun.elev);                                                       // lamp on from dusk
-    drawTent(c, CAMP.x, CAMP.y, glow, night, t);
+    var hiking = sun.elev > 4, glow = smooth(3, -4, sun.elev);
+    drawTent(c, CAMP.x, CAMP.y, CAMP.ang, glow, night, t);
     if (hiking) {
       var T = 64, p = t % T, s, moving = true, wave = false;
       if (p < 24) s = TRAIL_TOTAL * p / 24;
@@ -457,16 +502,16 @@
       else { s = 0; moving = false; }
       var dir = (p < 30) ? 1 : -1;
       for (var i = 0; i < HIKERS.length; i++) {
-        var pt = trailPoint(s - dir * i * 20 * (moving ? 1 : 0.9));
-        drawHiker(c, pt[0], pt[1], dir, t * 6 + i * 1.1, moving, HIKERS[i].jacket, HIKERS[i].pack, light, wave && i === 0);
+        var pt = trailPoint(s - dir * i * 13);
+        drawHiker(c, pt[0], pt[1], dir, t * 6 + i * 1.1, moving, HIKERS[i], light, wave && i === 0, false);
       }
     } else {
-      drawFire(c, CAMP.x + 30, CAMP.y + 1, glow, t);
-      drawHiker(c, CAMP.x + 46, CAMP.y + 1, -1, 0, false, HIKERS[0].jacket, HIKERS[0].pack, light, false);
-      drawHiker(c, CAMP.x + 17, CAMP.y + 1, 1, 0, false, HIKERS[1].jacket, HIKERS[1].pack, light, false);
+      var fx = CAMP.x + 34;
+      drawFire(c, fx, ridgeY(fx) + 0.5, glow, t);
+      drawHiker(c, CAMP.x + 22, ridgeY(CAMP.x + 22) + 0.5, 1, 0, false, HIKERS[0], light, false, true);
+      drawHiker(c, CAMP.x + 48, ridgeY(CAMP.x + 48) + 0.5, -1, 0, false, HIKERS[1], light, false, true);
     }
   }
-
   function frame(now) {
     var t = now / 1000, date = sceneDate(), sun = solar(date);
     var light = smooth(-8, 8, sun.elev), night = smooth(2, -10, sun.elev), sc = skyColors(sun.elev), w = wind(t);
@@ -480,11 +525,12 @@
     paintClouds(tctx, light, sc, t, w);
     paintRidges(tctx, light, sun, sc);
     paintMist(tctx, light, night, t);
-    paintTrees(tctx, light, t, w);
-    paintHikers(tctx, light, night, sun, t);
     var dt = lastT == null ? 0.033 : Math.min(0.1, t - lastT); lastT = t;
     updateBears(t, dt);
-    paintBears(tctx, light, t);
+    paintBears(tctx, light, t, true);          // in the forest: behind the trees
+    paintTrees(tctx, light, t, w);
+    paintHikers(tctx, light, night, sun, t);
+    paintBears(tctx, light, t, false);         // on the shore: in front
 
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     ctx.clearRect(0, 0, W, H);
