@@ -111,7 +111,8 @@ hr{border:0;border-top:1px solid var(--rule);margin:2.5rem 0}
 .person .p-aff{display:block;color:var(--ink-soft)}
 .person .p-role{display:block;font-size:.9rem;color:var(--glacier-deep);margin-top:.15rem}
 .logos{display:flex;flex-wrap:wrap;align-items:center;gap:1.5rem 2.5rem;margin:1rem 0 0}
-.logos img{height:58px;width:auto;max-width:220px;object-fit:contain}
+.logos img{height:66px;width:auto;max-width:240px;object-fit:contain}
+.logos-sponsors img{height:84px;max-width:300px}
 .logos .logo-text{font-family:var(--font-display);color:var(--navy);font-size:1.05rem;padding:.5rem .8rem;border:1px solid var(--rule);border-radius:6px;background:#fff}
 
 /* ---- inner pages --------------------------------------------------- */

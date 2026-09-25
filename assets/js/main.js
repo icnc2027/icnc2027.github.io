@@ -25,7 +25,9 @@
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAll(); });
   // hide logo images that are not present yet
   document.querySelectorAll('img[data-optional]').forEach(function (img) {
-    img.addEventListener('error', function () { img.style.display = 'none'; });
+    var hide = function () { img.style.display = 'none'; };
+    if (img.complete && img.naturalWidth === 0) hide();          // already failed before this script ran
+    img.addEventListener('error', hide);
   });
   // highlight the next upcoming milestone on the key-dates strip
   var now = new Date(), picked = null;
