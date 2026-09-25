@@ -1,19 +1,15 @@
 # Content still to confirm or fill in
 
-Everything that is a committee decision is currently shown as "to be announced" (TBA). Replace as each item is confirmed by Dr. Fang.
+Updated 25 Sep 2026. Dates and fees are now published (per the organizers' answers to CI). Remaining "to be announced" items:
 
 | Page | Item |
 |---|---|
-| Important dates, home-page strip | Abstract opening/deadline, notification, registration opening, presenter deadline, early-bird deadline, hotel booking deadline, online-registration close |
-| Abstract submission | Submission link, abstract length/template, rules (e.g. max talks per presenter) |
-| Registration | Fees, what is included, cancellation policy, companion/banquet/excursion prices |
-| Program / presenters | Session times, talk length, equipment and file formats |
-| Invited speakers | Names |
+| Abstract submission / Registration | The CI submission and registration links (add when the portal goes live, before 1 Nov 2026); the /register and /hotel short redirects |
 | Mini-symposia | Call text, procedure, deadline, accepted list |
-| Hotels | Banff Centre rates, taxes/facility fee, booking link or phone, booking deadline |
-| Local transportation | Any discount code; whether conference coaches run |
-| Social events | Mixer, Women in Combustion lunch, excursion (destination/date/price), banquet (venue/date/price), reception time |
-| Organizers | Steering Committee list; local team; whether to show the Scientific Team |
+| Invited speakers | Names |
+| Program / presenters | Session times, talk length, equipment and file formats |
+| Social events | Mixer date, Women in Combustion lunch date, banquet venue/date, excursion destination/date |
+| Accommodation | Taxes/fees breakdown and cancellation wording once confirmed by Banff Centre |
+| Organizers | Steering Committee list; local team names |
 | Sponsors / supporters | Sponsorship package; logo files in assets/img/logos/ |
-| Contacts | Whether to use a shared address such as icnc2027@ucalgary.ca |
 | Footer / venue | "Under the auspices of" line |
