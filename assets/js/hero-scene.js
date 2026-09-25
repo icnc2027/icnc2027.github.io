@@ -323,39 +323,70 @@
                 cubs: [{ x: 1010, y: 0, ph: 1.2, v: 0, dir: 1 }, { x: 975, y: 0, ph: 2.6, v: 0, dir: 1 }] };
   var lastT = null;
 
-  // round grizzly: one smooth blob for the body (shoulders a little higher than the rump), round head, round ears
   function drawBear(c, x, y, dir, scale, phase, sniff, light, cub, alpha) {
-    var fur = mix(hex('#3A2612'), cub ? hex('#8B653B') : hex('#6E4A28'), light);
-    var fur2 = mix(hex('#2B1A0C'), cub ? hex('#6C4A28') : hex('#54371C'), light);
-    var muzzle = mix(hex('#4E3A26'), hex('#C9A57C'), light);
-    c.save(); c.globalAlpha = alpha; c.translate(x, y); c.scale(dir * scale, scale);
-    var bob = 0.9 * Math.sin(phase * 2), still = sniff ? 0 : 1;
-    var legs = [[-13, 0], [-6, Math.PI], [8, Math.PI], [14, 0]];
-    for (var pass = 0; pass < 2; pass++) {
-      c.strokeStyle = rgb(pass === 0 ? fur2 : fur); c.lineWidth = cub ? 6.5 : 6; c.lineCap = 'round';
-      for (var i = 0; i < legs.length; i++) {
-        if ((i % 2 === 0) !== (pass === 0)) continue;
-        var sw = 6 * Math.sin(phase + legs[i][1]) * still, lift = Math.max(0, Math.sin(phase + legs[i][1])) * 2.5 * still;
-        c.beginPath(); c.moveTo(legs[i][0], -9 + bob); c.lineTo(legs[i][0] + sw, -lift); c.stroke();
-      }
-      if (pass === 0) {
-        c.fillStyle = rgb(fur);
-        c.beginPath();
-        c.moveTo(-22, -12 + bob);
-        c.bezierCurveTo(-24, -26 + bob, -8, -32 + bob, 4, -30 + bob);    // rump up to shoulders
-        c.bezierCurveTo(14, -29 + bob, 22, -24 + bob, 21, -14 + bob);    // shoulders down to chest
-        c.bezierCurveTo(20, -4 + bob, -20, -3 + bob, -22, -12 + bob);    // belly
-        c.closePath(); c.fill();
-        c.beginPath(); c.arc(-22, -16 + bob, 3, 0, 6.283); c.fill();      // tail
-      }
+    var fur   = mix(hex('#3A2612'), cub ? hex('#8A6238') : hex('#6A4626'), light);
+    var dark  = mix(hex('#24160A'), cub ? hex('#5E4022') : hex('#46301A'), light);
+    var pale  = mix(hex('#5A4632'), hex('#C8A67C'), light);
+    var tip   = mix(hex('#4A3520'), hex('#B08B5E'), light);          // grizzled hump tips
+    var still = sniff ? 0 : 1;
+    var bob = 0.8 * Math.sin(phase * 2) * still;
+    var hd = sniff ? 7 : 0, hf = sniff ? 3 : 0;                           // head drops and reaches forward when sniffing
+    c.save(); c.globalAlpha = alpha == null ? 1 : alpha; c.translate(x, y); c.scale(dir * scale, scale);
+  
+    // thick legs: [hipX, phase]; far pair first (darker), near pair after the body
+    function leg(hx, ph, far) {
+      var sw = 7 * Math.sin(phase + ph) * still, lift = Math.max(0, Math.sin(phase + ph)) * 2.5 * still;
+      var top = -16 + bob, w = 5.5;
+      c.fillStyle = rgb(far ? dark : fur);
+      c.beginPath();
+      c.moveTo(hx - w, top); c.lineTo(hx + w, top);
+      c.lineTo(hx + w + sw * 0.9, -4 - lift); c.lineTo(hx + w + sw + 2.5, -1.5 - lift);   // paw front
+      c.quadraticCurveTo(hx + sw, -lift + 1, hx - w + sw - 2, -1.5 - lift);              // paw sole
+      c.lineTo(hx - w + sw * 0.9, -4 - lift); c.closePath(); c.fill();
     }
-    var hy = -25 + bob + (sniff ? 8 : 0), hx = 21 + (sniff ? 2 : 0), hr = cub ? 9.5 : 8.5;
+    leg(-13 + 4, Math.PI, true);   // far rear
+    leg(15 + 4, 0, true);          // far front
+  
+    // body + head as one silhouette
     c.fillStyle = rgb(fur);
-    c.beginPath(); c.arc(hx - 4, hy - 7, 3.2, 0, 6.283); c.arc(hx + 3, hy - 8, 3.2, 0, 6.283); c.fill();
-    c.beginPath(); c.arc(hx, hy, hr, 0, 6.283); c.fill();
-    c.fillStyle = rgb(muzzle); c.beginPath(); c.ellipse(hx + 6.5, hy + 2.5, 4.6, 3.4, 0, 0, 6.283); c.fill();
-    c.fillStyle = rgb(fur2); c.beginPath(); c.arc(hx + 10, hy + 1.6, 1.6, 0, 6.283); c.fill();
-    c.fillStyle = 'rgba(20,12,6,0.9)'; c.beginPath(); c.arc(hx + 2.5, hy - 1.5, 1.1, 0, 6.283); c.fill();
+    c.beginPath();
+    c.moveTo(-27, -14 + bob);                                             // rump, low
+    c.bezierCurveTo(-30, -24 + bob, -22, -31 + bob, -12, -33 + bob);      // up the back
+    c.bezierCurveTo(-6, -36 + bob, 2, -36 + bob, 8, -32 + bob);           // shoulder hump (highest point)
+    c.bezierCurveTo(12, -30 + bob, 15, -29 + bob, 18, -29 + bob + hd*0.4);// neck
+    c.bezierCurveTo(22, -32 + bob + hd*0.6, 27, -31 + bob + hd, 30, -27.5 + bob + hd); // crown of head
+    c.bezierCurveTo(34, -24 + bob + hd, 37 + hf, -21 + bob + hd, 39 + hf, -18.5 + bob + hd); // dished face to nose
+    c.bezierCurveTo(38.3 + hf, -15 + bob + hd, 34.5 + hf, -13.2 + bob + hd, 30, -12.8 + bob + hd); // under jaw
+    c.bezierCurveTo(26, -12 + bob + hd*0.5, 22, -11.5 + bob, 19, -10.8 + bob);   // throat
+    c.bezierCurveTo(14, -9 + bob, -14, -8 + bob, -22, -9.5 + bob);        // belly
+    c.bezierCurveTo(-26, -10.5 + bob, -28, -12 + bob, -27, -14 + bob);    // rump
+    c.closePath(); c.fill();
+  
+    // grizzled tips on the hump
+    c.fillStyle = rgb(tip, 0.28);
+    c.beginPath(); c.ellipse(-2, -31 + bob, 12, 4.2, 0, Math.PI, 0); c.closePath(); c.fill();
+    // ears (small, round, set back on the head)
+    c.fillStyle = rgb(fur);
+    c.beginPath(); c.arc(21, -30.5 + bob + hd*0.7, 3.1, 0, 6.283); c.arc(27, -31 + bob + hd, 3.1, 0, 6.283); c.fill();
+    c.fillStyle = rgb(dark, 0.45);
+    c.beginPath(); c.arc(21, -30.5 + bob + hd*0.7, 1.4, 0, 6.283); c.arc(27, -31 + bob + hd, 1.4, 0, 6.283); c.fill();
+    // pale muzzle: rounded patch inside the face, widest at the cheek
+    c.fillStyle = rgb(pale);
+    c.beginPath();
+    c.moveTo(30, -25 + bob + hd);
+    c.bezierCurveTo(34 + hf, -24 + bob + hd, 38 + hf, -21.5 + bob + hd, 39 + hf, -18.5 + bob + hd);
+    c.bezierCurveTo(38.3 + hf, -15.5 + bob + hd, 34.5 + hf, -13.8 + bob + hd, 30.5, -13.6 + bob + hd);
+    c.bezierCurveTo(27.5, -14.5 + bob + hd, 26.5, -21 + bob + hd, 30, -25 + bob + hd);
+    c.closePath(); c.fill();
+    // mouth line
+    c.strokeStyle = rgb(dark, 0.55); c.lineWidth = 0.9;
+    c.beginPath(); c.moveTo(38.2 + hf, -16.2 + bob + hd); c.quadraticCurveTo(35.5 + hf, -15 + bob + hd, 33 + hf, -15.6 + bob + hd); c.stroke();
+    // nose and eye
+    c.fillStyle = rgb(dark); c.beginPath(); c.arc(38.6 + hf, -18.6 + bob + hd, 1.7, 0, 6.283); c.fill();
+    c.fillStyle = 'rgba(15,10,5,0.95)'; c.beginPath(); c.arc(30, -24.5 + bob + hd*0.9, 1.15, 0, 6.283); c.fill();
+  
+    leg(-13, Math.PI, false);      // near rear
+    leg(15, 0, false);             // near front
     c.restore();
   }
   // life cycle (period 150 s): on the shore -> into the forest (fade out behind the trees) -> away -> back out somewhere else
@@ -396,9 +427,9 @@
     var y = SHORE + 1;
     for (var i = bears.cubs.length - 1; i >= 0; i--) {
       var cub = bears.cubs[i];
-      drawBear(c, cub.x, y + cub.y, cub.dir, 0.36, cub.ph, cub.v < 1 && bears.mode === 'sniff', light, true, bears.alpha);
+      drawBear(c, cub.x, y + cub.y, cub.dir, 0.32, cub.ph, cub.v < 1 && bears.mode === 'sniff', light, true, bears.alpha);
     }
-    drawBear(c, bears.x, y + bears.y, bears.dir, 0.6, bears.phase, bears.mode === 'sniff', light, false, bears.alpha);
+    drawBear(c, bears.x, y + bears.y, bears.dir, 0.52, bears.phase, bears.mode === 'sniff', light, false, bears.alpha);
   }
 
   // ---------- hikers on the low peak; dome tent pitched on the slope ----------
