@@ -94,6 +94,7 @@ hr{border:0;border-top:1px solid var(--rule);margin:2.5rem 0}
 .timeline .t-date{font-family:var(--font-display);font-weight:600;color:var(--navy);font-size:1.15rem;display:block;line-height:1.2}
 .timeline .t-label{display:block;color:var(--ink-soft);font-size:.95rem}
 .timeline li.is-now{border-left-color:var(--larch)}
+@media (min-width:860px){.timeline{grid-template-columns:repeat(4,1fr)}}
 .dates-foot{margin:.9rem 0 0;font-size:.9rem;color:var(--ink-soft)}
 
 /* ---- sections ------------------------------------------------------ */

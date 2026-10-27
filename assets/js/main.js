@@ -29,8 +29,12 @@
     if (img.complete && img.naturalWidth === 0) hide();          // already failed before this script ran
     img.addEventListener('error', hide);
   });
-  // highlight the next upcoming milestone on the key-dates strip
+  // hide time-limited elements (e.g. a call-for-proposals button) once their date has passed
   var now = new Date(), picked = null;
+  document.querySelectorAll('[data-until]').forEach(function (el) {
+    if (new Date(el.getAttribute('data-until')) <= now) el.style.display = 'none';
+  });
+  // highlight the next upcoming milestone on the key-dates strip
   document.querySelectorAll('.timeline li[data-date]').forEach(function (li) {
     if (!picked && new Date(li.getAttribute('data-date')) >= now) picked = li;
   });
