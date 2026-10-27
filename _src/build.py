@@ -40,7 +40,7 @@ PAGES = {
   "topics": ("Topics", "Topics covered by ICNC 2027 contributed talks and mini-symposia.", "Program"),
   "mini-symposia": ("Mini-Symposia", "Call for mini-symposium proposals for ICNC 2027: proposals due 4 January 2027.", "Program"),
   "important-dates": ("Important Dates", "ICNC 2027 key dates: abstracts and registration open 1 November 2026, mini-symposium proposals due 4 January 2027, abstract deadline 31 January 2027, early-bird registration until 15 March 2027, conference 1–4 June 2027 in Banff.", "Abstracts & Registration"),
-  "abstract-submission": ("Abstract Submission", "How to submit a one-page abstract to ICNC 2027: template, deadline 31 January 2027 (mini-symposium talks 28 February 2027).", "Abstracts & Registration"),
+  "abstract-submission": ("Abstract Submission", "How to submit a one-page abstract to ICNC 2027: template, deadline 31 January 2027 for contributed and mini-symposium talks.", "Abstracts & Registration"),
   "registration": ("Registration", "ICNC 2027 registration: fees in USD (early-bird until 15 March 2027), what is included, and refund policy.", "Abstracts & Registration"),
   "organizers": ("Organizers", "Organizing committee and scientific team of ICNC 2027.", None),
   "venue": ("Venue", "Banff Centre for Arts and Creativity, Banff, Alberta, Canada.", "Information"),
